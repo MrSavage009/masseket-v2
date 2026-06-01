@@ -1,0 +1,8 @@
+# Development files — don't ship these
+src/
+tsconfig.json
+.vscode/
+out/**/*.map
+
+# Node stuff (if any)
+node_modules/

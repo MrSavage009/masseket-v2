@@ -1,0 +1,50 @@
+{
+  "name": "masseket-v2",
+  "displayName": "Masseket v2: Verified Tensor Refactor",
+  "description": "Visual loop compiler & verifier with decidable equality",
+  "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MrSavage009/masseket-v2"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Visualization",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "masseket.visualize",
+        "title": "Masseket: Visualize Tensor Loop"
+      }
+    ],
+    "configuration": {
+      "title": "Masseket",
+      "properties": {
+        "masseket.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "Path to Python interpreter"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.41",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3"
+  }
+}
