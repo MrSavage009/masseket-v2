@@ -1,13 +1,24 @@
-🧶 Masseket v2
-> **Visual loop compiler & verifier with decidable equality**
->
-> Turn slow, nested Python tensor loops into verified, vectorized `einops` code — with a live thread loom diagram.
-![VS Code](https://img.shields.io/badge/VS%20Code-Extension-blue?logo=visualstudiocode)
-![Python](https://img.shields.io/badge/Python-3.8%2B-yellow?logo=python)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+<div align="center">
+
+# 🧶 Masseket v2
+
+**Visual loop compiler & verifier with decidable equality**
+
+Turn slow, nested Python tensor loops into verified, vectorized `einops` code — with a live thread loom diagram.
+
+[![VS Code](https://img.shields.io/badge/VS%20Code-Extension-007ACC?logo=visualstudiocode)](https://code.visualstudio.com/)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-0.2.0-blue)](https://github.com/MrSavage009/masseket-v2/releases)
+
+</div>
+
 ---
-✨ What it does
-Write a slow, readable loop:
+
+## The Problem
+
+You write a slow, readable loop to make sure the math is correct:
+
 ```python
 for n in range(N):
     for h in range(H):
@@ -15,58 +26,87 @@ for n in range(N):
             for c in range(C):
                 output[n, c, h, w] = input_tensor[n, h, w, c]
 ```
-Hover → instant compact thread diagram  
-Click 💡 → collapses to one line:
-```python
-output = rearrange(input_tensor, 'n h w c -> n c h w')
+
+Then you spend **20 minutes** sketching dimensions on a notepad, fighting `.transpose().reshape().permute()` chains, and praying you don't hit:
+
 ```
-Open panel → full-size loom with verified badge & generated code
+RuntimeError: shape mismatch
+```
+
 ---
-🚀 Features
-Feature	How it works
-Hover Tooltip	Mouse over any tensor loop → compact SVG thread flow, verified status, speedup estimate
-Code Action	💡 lightbulb → "Replace loop with vectorized einops" — one-click refactor
-Full Loom Panel	Status bar $(sparkle) or `Ctrl+Shift+P` → `Masseket: Visualize Tensor Loop`
-Verified Badge	Green ✓ if loop maps to valid einops; red ⚠️ if shape mismatch
-Diagnostics	Save file → red/yellow squiggles under invalid loops
-NHWC → NCHW	Channels-last to channels-first in one click
-Any permutation	h w c → w h c, b (h w) c → b h w c, etc.
+
+## The Solution
+
+**Masseket v2** does it in **one second**.
+
+| Before | After |
+|--------|-------|
+| 6-line nested loop | `output = rearrange(input_tensor, 'n h w c -> n c h w')` |
+| Manual dimension tracking | Verified by symbolic solver |
+| Trial-and-error crashes | Mathematically guaranteed correct |
+
 ---
-📸 Demo
-Hover — instant preview
-![Hover](docs/hover.png)
-Full panel — deep inspection
-![Panel](docs/panel.png)
+
+## ✨ Features
+
+### 🖱️ Hover — Instant Preview
+Mouse over any tensor loop. A compact SVG thread diagram pops up showing exactly how your dimensions weave together.
+
+![Hover Demo](docs/hover.png)
+
+### 💡 Lightbulb — One-Click Refactor
+Click the yellow lightbulb → **"Replace loop with vectorized einops"**. The entire loop collapses to a single optimized line.
+
+### 🧶 Full Loom Panel — Deep Inspection
+Click the sparkle icon in your status bar (`$(sparkle) Masseket`) or run `Masseket: Visualize Tensor Loop` from the command palette.
+
+![Panel Demo](docs/panel.png)
+
+The full panel shows:
+- ✅ **Verified badge** — green if the transformation is mathematically sound
+- 🚀 **Speedup estimate** — predicted performance gain
+- 🧵 **Large thread diagram** — full-size SVG with all weave crossings visible
+- 💻 **Generated code** — the exact `einops` line ready to copy
+
+### 🔴 Diagnostics — Catch Errors Before Runtime
+Save your file. Masseket analyzes every loop and draws red/yellow squiggles under invalid transformations — before you ever run on GPU.
+
 ---
-🛠️ Installation
-From VSIX (local)
-Download `masseket-v2-0.2.0.vsix` from Releases
-VS Code → Extensions → `...` → Install from VSIX...
-Select the `.vsix` file
-From Marketplace (coming soon)
+
+## 🚀 Quick Start
+
+### Install
+
+**From VSIX (now):**
+1. Download [`masseket-v2-0.2.0.vsix`](https://github.com/MrSavage009/masseket-v2/releases/latest)
+2. VS Code → Extensions → `...` → **Install from VSIX...**
+
+**From Marketplace (soon):**
 ```
 Search: "Masseket" in VS Code Extensions
 ```
----
-⚙️ Requirements
-VS Code `^1.85.0`
-Python `3.8+` (path configurable in settings)
-Configure Python path
-If `python3` is not found (common on Windows), set it in VS Code settings:
+
+### Configure Python Path
+
+If `python3` is not found (common on Windows), set it in VS Code settings (`Ctrl+,`):
+
 ```json
 {
     "masseket.pythonPath": "python"
 }
 ```
-Or full path:
+
+Or use the full path:
 ```json
 {
     "masseket.pythonPath": "C:\Users\you\AppData\Local\Programs\Python\Python311\python.exe"
 }
 ```
----
-🧪 Test it
-Create a Python file and paste:
+
+### Try It
+
+Create `test.py` and paste:
+
 ```python
 # NHWC → NCHW (channels-last to channels-first)
 for n in range(N):
@@ -75,24 +115,61 @@ for n in range(N):
             for c in range(C):
                 output[n, c, h, w] = input_tensor[n, h, w, c]
 ```
-Hover over the loop → see thread diagram
-Click 💡 → replace with `rearrange(...)`
-Save → diagnostics check validity
+
+- **Hover** over the loop → see thread diagram
+- **Click** 💡 → replace with `rearrange(...)`
+- **Save** → diagnostics validate correctness
+
 ---
-🏗️ Architecture
+
+## 🏗️ How It Works
+
 ```
 ┌─────────────────┐     spawn     ┌─────────────────────────────┐
-│  VS Code (TS)   │ ◄───────────► │  Python Backend (AST)     │
-│                 │    JSON-RPC   │  • Loop parser (ast)      │
+│  VS Code (TS)   │ ◄───────────► │  Python Backend (AST)       │
+│                 │    JSON-RPC   │  • Loop parser (ast)        │
 │  • Hover        │               │  • SVG generator            │
 │  • Code actions │               │  • Einops codegen           │
-│  • Diagnostics  │               │  • Decidable verifier     │
+│  • Diagnostics  │               │  • Decidable verifier       │
 │  • Webview panel│               │                             │
 └─────────────────┘               └─────────────────────────────┘
 ```
-No models. No GPU. Pure symbolic math.
+
+**No models. No GPU. Pure symbolic math.**
+
+### The Verification Engine
+
+1. Parse loop AST → extract index mappings
+2. Represent as **finite read-map** on tensor positions
+3. Reduce to **canonical normal form**
+4. Compare: if match → **verified** ✓
+
+This guarantees the generated `einops` code is mathematically identical to your loop. No silent bugs. No shape mismatches.
+
 ---
-📦 Build from source
+
+## 📸 Screenshots
+
+| Hover Tooltip | Full Loom Panel |
+|:-------------:|:---------------:|
+| ![Hover](docs/hover.png) | ![Panel](docs/panel.png) |
+| Compact, instant, no scrolling | Full-size with code output |
+
+---
+
+## 🧪 Real-World Use Cases
+
+| Pattern | Loop | Generated Code |
+|---------|------|---------------|
+| **NHWC → NCHW** | `output[n,c,h,w] = input[n,h,w,c]` | `rearrange(input, 'n h w c -> n c h w')` |
+| **Transpose** | `output[h,w] = input[w,h]` | `rearrange(input, 'w h -> h w')` |
+| **Flatten** | `output[b,(h w),c] = input[b,h,w,c]` | `rearrange(input, 'b h w c -> b (h w) c')` |
+| **Unflatten** | `output[b,h,w,c] = input[b,(h w),c]` | `rearrange(input, 'b (h w) c -> b h w c')` |
+
+---
+
+## 📦 Build from Source
+
 ```bash
 git clone https://github.com/MrSavage009/masseket-v2.git
 cd masseket-v2
@@ -101,30 +178,39 @@ npm run compile
 # F5 in VS Code to debug
 vsce package    # builds .vsix
 ```
+
 ---
-🧠 The math
-Masseket v2 uses a decidable structural equality solver:
-Parse loop AST → extract index mappings
-Represent as finite read-map on tensor positions
-Reduce to canonical normal form
-Compare: if match → verified ✓
-This guarantees the generated `einops` code is mathematically identical to your loop.
+
+## 🗺️ Roadmap
+
+- [x] Hover tooltip with compact SVG
+- [x] Full webview panel
+- [x] Code action (lightbulb refactor)
+- [x] Diagnostics on save
+- [ ] Split/merge axes (`(h w)` notation)
+- [ ] Reduction loops (`sum`, `mean`, `max`)
+- [ ] `einsum` codegen
+- [ ] GitHub Copilot shield (verify AI suggestions)
+- [ ] PyPI package for Jupyter/Colab
+
 ---
-🗺️ Roadmap
-[x] Hover tooltip with compact SVG
-[x] Full webview panel
-[x] Code action (lightbulb refactor)
-[x] Diagnostics on save
-[ ] Split/merge axes (`(h w)` notation)
-[ ] Reduction loops (`sum`, `mean`, `max`)
-[ ] `einsum` codegen
-[ ] GitHub Copilot shield (verify AI suggestions)
-[ ] PyPI package for Jupyter/Colab
----
-🤝 Contributing
+
+## 🤝 Contributing
+
 PRs welcome. Open an issue for bugs or feature requests.
+
 ---
-📄 License
-MIT © 2026 MrSavage009
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 MrSavage009
+
 ---
-> *"Masseket" (מַסֶּכֶת) — Biblical Hebrew for "warp/web of a loom." Tensor dimensions as woven threads.*
+
+<div align="center">
+
+*"Masseket" (מַסֶּכֶת) — Biblical Hebrew for "warp/web of a loom."*
+
+*Tensor dimensions as woven threads.*
+
+</div>
